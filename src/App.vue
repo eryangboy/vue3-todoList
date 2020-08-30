@@ -17,14 +17,22 @@
       <ul class="todo-list">
         <li
           v-for="todo in todos"
-          :key="todo.text"
+          :key="todo"
+          :class="{ editing: todo === editingTodo }"
         >
           <div class="view">
             <input class="toggle" type="checkbox">
-            <label>{{ todo.text }}</label>
+            <label @dblclick="editTodo(todo)">{{ todo.text }}</label>
             <button class="destroy" @click="remove(todo)"></button>
           </div>
-          <input class="edit" type="text">
+          <input
+            class="edit"
+            type="text"
+            v-model="todo.text"
+            @keyup.enter="doneEdit(todo)"
+            @blur="doneEdit(todo)"
+            @keyup.esc="cancelEdit(todo)"
+            >
         </li>
       </ul>
     </section>
@@ -86,15 +94,45 @@ const useRemove = todos => {
   }
 }
 
+// 3. 编辑待办项
+const useEdit = remove => {
+  let beforeEditingText = ''
+  const editingTodo = ref(null)
+
+  const editTodo = todo => {
+    beforeEditingText = todo.text
+    editingTodo.value = todo
+  }
+  const doneEdit = todo => {
+    if (!editingTodo.value) return
+    todo.text = todo.text.trim()
+    todo.text || remove(todo)
+    editingTodo.value = null
+  }
+  const cancelEdit = todo => {
+    editingTodo.value = null
+    todo.text = beforeEditingText
+  }
+  return {
+    editingTodo,
+    editTodo,
+    doneEdit,
+    cancelEdit
+  }
+}
+
 export default {
   name: 'App',
   setup () {
     const todos = ref([])
 
+    const { remove } = useRemove(todos)
+
     return {
       todos,
+      remove,
       ...useAdd(todos),
-      ...useRemove(todos)
+      ...useEdit(remove)
     }
   }
 }
