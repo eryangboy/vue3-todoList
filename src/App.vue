@@ -63,7 +63,10 @@
 
 <script>
 import './assets/index.css'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import useLocalStorage from './utils/useLocalStorage'
+import { ref, computed, onMounted, onUnmounted, watchEffect } from 'vue'
+
+const storage = useLocalStorage()
 
 // 1. 添加待办事项
 const useAdd = todos => {
@@ -175,10 +178,20 @@ const useFilter = todos => {
   }
 }
 
+// 5. 存储待办事项
+const useStorage = () => {
+  const KEY = 'TODOKEYS'
+  const todos = ref(storage.getItem(KEY) || [])
+  watchEffect(() => {
+    storage.setItem(KEY, todos.value)
+  })
+  return todos
+}
+
 export default {
   name: 'App',
   setup () {
-    const todos = ref([])
+    const todos = useStorage()
 
     const { remove, removeCompleted } = useRemove(todos)
 
